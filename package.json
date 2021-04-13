@@ -1,33 +1,55 @@
 {
-  "name": "module-federation-test",
-  "version": "1.0.0",
+  "name": "@cdssnc/design-system-test",
+  "version": "1.0.3",
+  "description": "",
+  "main": "dist/node/remote-entry.js",
+  "browser": "dist/browser/remote-entry.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "webpack --mode production",
-    "build:dev": "webpack --mode development",
-    "build:start": "cd dist && PORT=8080 npx serve",
-    "start": "webpack serve",
-    "start:live": "webpack serve --open --mode development --liveReload"
+    "build": "NODE_ENV=production webpack --mode production",
+    "serve:dev": "NODE_ENV=development node dev-server",
+    "build:dev": "webpack serve --open --mode development --liveReload"
   },
+  "keywords": [],
+  "author": "",
   "license": "MIT",
   "dependencies": {
-    "@babel/runtime": "^7.13.10",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.13.15",
-    "@babel/plugin-transform-runtime": "^7.13.15",
-    "@babel/preset-env": "^7.13.15",
-    "@babel/preset-react": "^7.13.13",
-    "babel-loader": "^8.2.2",
-    "camel-case": "^4.1.2",
-    "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-typescript": "^7.13.0",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "classnames": "^2.3.1",
     "css-loader": "^5.2.1",
-    "html-webpack-plugin": "^5.3.1",
+    "mini-css-extract-plugin": "^1.4.1",
+    "postcss-loader": "^5.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "style-loader": "^2.0.0",
+    "ts-loader": "^8.1.0",
+    "typescript": "^4.2.4"
+  },
+  "browserslist": [
+    "defaults"
+  ],
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.10",
+    "@testing-library/react": "^11.2.6",
+    "autoprefixer": "^10.2.5",
+    "camel-case": "^4.1.2",
+    "clean-webpack-plugin": "4.0.0-alpha.0",
+    "copy-webpack-plugin": "^8.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "html-webpack-plugin": "^5.3.1",
+    "jest": "^26.6.3",
+    "postcss": "^8.2.10",
+    "rimraf": "^3.0.2",
+    "tailwindcss": "^2.1.1",
     "webpack": "^5.31.2",
     "webpack-cli": "^4.6.0",
-    "webpack-dev-server": "3.11.2",
-    "copy-webpack-plugin": "^8.1.1"
+    "webpack-dev-server": "^3.11.2",
+    "webpack-merge": "^5.7.3"
   }
 }

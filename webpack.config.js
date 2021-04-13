@@ -1,100 +1,114 @@
-// based on https://github.com/jherr/unpkg-mf-react-finished/blob/master/react-unpkg-mf-consumer-starter/webpack.config.js
-
 const path = require("path");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-const HtmlWebPackPlugin = require("html-webpack-plugin");
-const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+const webpack = require("webpack");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const { camelCase } = require("camel-case");
-const CopyPlugin = require("copy-webpack-plugin");
+const { merge } = require("webpack-merge");
 
-const federatedRemotes = {
-  "@cdssnc/design-system-test": "^1",
-};
-const deps = {
-  ...federatedRemotes,
-  ...require("./package.json").dependencies,
-};
+// ===================================================
 
-const unpkgRemote = (name) => {
-  const pkg = `${camelCase(name)}@https://unpkg.com/${name}@${
-    deps[name]
-  }/dist/browser/remote-entry.js`;
+const pkg = require("./package.json");
+const name = camelCase(pkg.name);
 
-  console.log(`unpkgRemote ${pkg}`);
-  /*
-  const pkg = `${camelCase(
-    name
-  )}@http://localhost:3000/dist/browser/remote-entry.js`;
-  */
-
-  return pkg;
+// The modules you want to expose
+const exposes = {
+  "./main": "./src/main.ts",
 };
 
-const remotes = Object.keys(federatedRemotes).reduce(
-  (remotes, lib) => ({
-    ...remotes,
-    [lib]: unpkgRemote(lib),
-  }),
-  {}
-);
-
-module.exports = {
-  resolve: {
-    extensions: [".jsx", ".js", ".json"],
+const deps = require("./package.json").dependencies;
+const shared = {
+  ...deps,
+  react: {
+    singleton: true,
+    requiredVersion: deps.react,
   },
+};
 
-  output: {
-    path: path.resolve(__dirname, "dist/"),
-  },
+// ===================================================
 
-  devServer: {
-    port: 8080,
-  },
-
-  module: {
-    rules: [
-      {
-        test: /\.m?js/,
-        type: "javascript/auto",
-        resolve: {
-          fullySpecified: false,
+module.exports = (env, argv) => {
+  let config = {
+    entry: "./src/dev.tsx",
+    output: { path: path.join(__dirname, "dist"), filename: "index.bundle.js" },
+    mode: argv.mode,
+    resolve: {
+      extensions: [".tsx", ".ts", ".js"],
+    },
+    devServer: { contentBase: path.join(__dirname, "src") },
+    module: {
+      rules: [
+        {
+          test: /\.(js|jsx)$/,
+          exclude: /node_modules/,
+          use: ["babel-loader"],
         },
-      },
-      {
-        test: /\.css$/i,
-        use: ["style-loader", "css-loader"],
-      },
-      {
-        test: /\.(js|jsx)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
+        {
+          test: /\.(ts|tsx)$/,
+          exclude: /node_modules/,
+          use: ["ts-loader"],
         },
-      },
+        {
+          test: /\.css$/,
+          use: [MiniCssExtractPlugin.loader, "css-loader", "postcss-loader"],
+        },
+        {
+          test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
+          use: ["file-loader"],
+        },
+      ],
+    },
+    plugins: [
+      new HtmlWebpackPlugin({
+        template: path.join(__dirname, "src", "dev.html"),
+      }),
+      new MiniCssExtractPlugin({
+        filename: "css/styles.css",
+      }),
     ],
-  },
+  };
 
+  if (argv.mode === "development") {
+    config.plugins.push(new webpack.HotModuleReplacementPlugin());
+    config.devServer = {
+      contentBase: path.join(__dirname, "dist"),
+      compress: true,
+      port: 9000,
+    };
+
+    return config;
+  }
+
+  return [merge(config, browserConfig), merge(config, nodeConfig)];
+};
+
+/** @type {webpack.Configuration} */
+const browserConfig = {
+  output: {
+    path: path.resolve("./dist/browser"),
+  },
   plugins: [
-    new CopyPlugin({
-      patterns: [{ from: "src/images", to: "images" }],
+    new webpack.container.ModuleFederationPlugin({
+      name,
+      filename: "remote-entry.js",
+      exposes,
+      shared,
     }),
-    new CleanWebpackPlugin(),
-    new ModuleFederationPlugin({
-      remotes,
-      shared: {
-        ...deps,
-        react: {
-          singleton: true,
-          requiredVersion: deps.react,
-        },
-        "react-dom": {
-          singleton: true,
-          requiredVersion: deps["react-dom"],
-        },
-      },
-    }),
-    new HtmlWebPackPlugin({
-      template: "./src/index.html",
+  ],
+};
+
+/** @type {webpack.Configuration} */
+const nodeConfig = {
+  target: "node",
+  output: {
+    path: path.resolve("./dist/node"),
+  },
+  plugins: [
+    new webpack.container.ModuleFederationPlugin({
+      name,
+      filename: "remote-entry.js",
+      library: { type: "commonjs" },
+      exposes,
+      shared,
     }),
   ],
 };
